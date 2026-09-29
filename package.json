@@ -1,0 +1,15 @@
+{
+  "name": "filafacil-logistica",
+  "version": "2.0.0",
+  "description": "FilaFácil Logística - CRUD de coletas em terminal com SQLite + Sequelize",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "migrar": "node scripts/migrar-json.js"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "sequelize": "^6.37.8",
+    "sqlite3": "^6.0.1"
+  }
+}
