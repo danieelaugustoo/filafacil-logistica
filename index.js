@@ -1,55 +1,24 @@
 const readline = require("readline/promises");
-const controller = require("./controller");
+const api = require("./colects");
 
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
 });
 
-function imprimirColetas(coletas) {
-  if (coletas.length === 0) {
-    console.log("Nenhuma coleta encontrada.");
-    return;
-  }
-
-  coletas.forEach((c) => {
-    console.log(
-      `\n[ID: ${c.id}] ${c.cliente} | Status: ${c.status} | Prio: ${c.prioridade}`,
-    );
-    console.log(
-      `Endereço: ${c.endereco} | Pacotes: ${c.pacotes} | Criada em: ${new Date(c.createdAt).toLocaleString("pt-BR")}`,
-    );
-  });
-}
-
-function imprimirContagem(titulo, contagem) {
-  console.log(`\n${titulo}:`);
-  const entradas = Object.entries(contagem);
-  if (entradas.length === 0) {
-    console.log("Nenhum dado registrado.");
-    return;
-  }
-  entradas.forEach(([chave, qtd]) => console.log(`- ${chave}: ${qtd}`));
-}
-
 async function init() {
-  await controller.iniciar();
-
   while (true) {
     console.log("\n[ FILAFÁCIL LOGÍSTICA ]");
     console.log("1. Nova coleta");
-    console.log("2. Listar coletas");
-    console.log("3. Filtrar coletas");
-    console.log("4. Mudar status");
-    console.log("5. Deletar coleta");
-    console.log("6. Resumo");
-    console.log("7. Sair");
+    console.log("2. Listar / Filtrar");
+    console.log("3. Mudar status");
+    console.log("4. Resumo");
+    console.log("5. Sair");
 
     const op = await rl.question("\nOpção: ");
-    let r;
 
     switch (op) {
-      case "1": {
+      case "1":
         console.log("\n-- Nova Coleta --");
         const cliente = await rl.question("Cliente: ");
         const endereco = await rl.question("Endereço: ");
@@ -58,64 +27,72 @@ async function init() {
           "Prioridade (baixa, media, alta): ",
         );
 
-        r = await controller.nova({ cliente, endereco, pacotes, prioridade });
-        console.log(r.mensagem);
+        if (api.cadastrar(cliente, endereco, Number(pacotes), prioridade)) {
+          console.log("Coleta salva com sucesso!");
+        } else {
+          console.log("Erro: preencha tudo corretamente e pacotes > 0.");
+        }
         break;
-      }
 
-      case "2": {
-        const ordem = await rl.question("\nOrdenar por (1) ID ou (2) data: ");
-        r = await controller.listar(ordem);
-        imprimirColetas(r.dados);
-        break;
-      }
-
-      case "3": {
-        const tipo = await rl.question(
-          "\nFiltrar por (1) status, (2) prioridade ou (3) nome do cliente: ",
+      case "2":
+        const filtro = await rl.question(
+          "\nFiltrar por prioridade (deixe em branco p/ listar todas): ",
         );
-        if (!["1", "2", "3"].includes(tipo)) {
-          console.log("Opção de filtro inválida.");
+        const lista = api.listar(filtro);
+
+        if (lista.length === 0) {
+          console.log("Nenhuma coleta encontrada.");
           break;
         }
-        const valor = await rl.question("Valor: ");
-        r = await controller.filtrar(tipo, valor);
-        if (r.ok) imprimirColetas(r.dados);
-        else console.log(r.mensagem);
-        break;
-      }
 
-      case "4": {
+        lista.forEach((c) => {
+          console.log(
+            `\n[ID: ${c.id}] ${c.cliente} | Status: ${c.status} | Prio: ${c.prioridade}`,
+          );
+          console.log(`Endereço: ${c.endereco} | Pacotes: ${c.pacotes}`);
+        });
+        break;
+
+      case "3":
         console.log("\n-- Atualizar Status --");
         const id = await rl.question("ID da coleta: ");
         const status = await rl.question("Novo status: ");
-        r = await controller.atualizarStatus(id, status);
-        console.log(r.mensagem);
-        break;
-      }
 
-      case "5": {
-        console.log("\n-- Deletar Coleta --");
-        const id = await rl.question("ID da coleta: ");
-        r = await controller.deletar(id);
-        console.log(r.mensagem);
+        if (api.atualizarStatus(id, status)) {
+          console.log("Status alterado!");
+        } else {
+          console.log("Erro: ID não existe.");
+        }
         break;
-      }
 
-      case "6": {
+      case "4":
         console.log("\n-- Resumo Operacional --");
-        r = await controller.resumo();
-        console.log(`Total de Coletas: ${r.dados.totalColetas}`);
-        console.log(`Total de Pacotes: ${r.dados.totalPacotes}`);
-        imprimirContagem("Por Status", r.dados.porStatus);
-        imprimirContagem("Por Prioridade", r.dados.porPrioridade);
-        break;
-      }
+        const r = api.resumo();
+        console.log(`Total de Coletas: ${r.totalColetas}`);
+        console.log(`Total de Pacotes: ${r.totalPacotes}`);
 
-      case "7":
+        console.log("\nPor Status:");
+        if (Object.keys(r.porStatus).length === 0) {
+          console.log("Nenhum dado registrado.");
+        } else {
+          Object.entries(r.porStatus).forEach(([st, qtd]) =>
+            console.log(`- ${st}: ${qtd}`),
+          );
+        }
+
+        console.log("\nPor Prioridade:");
+        if (Object.keys(r.porPrioridade).length === 0) {
+          console.log("Nenhum dado registrado.");
+        } else {
+          Object.entries(r.porPrioridade).forEach(([pr, qtd]) =>
+            console.log(`- ${pr}: ${qtd}`),
+          );
+        }
+        break;
+
+      case "5":
         console.log("Encerrando...");
         rl.close();
-        await controller.encerrar();
         return;
 
       default:
@@ -124,8 +101,4 @@ async function init() {
   }
 }
 
-init().catch((erro) => {
-  console.error("Erro inesperado:", erro.message);
-  rl.close();
-  controller.encerrar().finally(() => process.exit(1));
-});
+init();
