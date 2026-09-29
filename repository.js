@@ -1,7 +1,16 @@
 const { Op } = require("sequelize");
+const sequelize = require("./database");
 const Coleta = require("./models/Coleta");
 
 const ORDENACOES = { id: "id", data: "createdAt" };
+
+async function iniciar() {
+  await sequelize.sync();
+}
+
+async function encerrar() {
+  await sequelize.close();
+}
 
 function paraObjeto(registro) {
   return registro ? registro.toJSON() : null;
@@ -56,6 +65,8 @@ async function remover(id) {
 }
 
 module.exports = {
+  iniciar,
+  encerrar,
   inserir,
   listar,
   buscarPorId,

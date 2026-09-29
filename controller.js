@@ -30,4 +30,16 @@ function resumo() {
   return service.resumo();
 }
 
-module.exports = { nova, listar, filtrar, atualizarStatus, deletar, resumo };
+const iniciar = () => service.iniciar();
+const encerrar = () => service.encerrar();
+
+module.exports = {
+  iniciar,
+  encerrar,
+  nova,
+  listar,
+  filtrar,
+  atualizarStatus,
+  deletar,
+  resumo,
+};
