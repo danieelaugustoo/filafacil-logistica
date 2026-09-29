@@ -1,5 +1,4 @@
 const readline = require("readline/promises");
-const sequelize = require("./database");
 const controller = require("./controller");
 
 const rl = readline.createInterface({
@@ -34,7 +33,7 @@ function imprimirContagem(titulo, contagem) {
 }
 
 async function init() {
-  await sequelize.sync();
+  await controller.iniciar();
 
   while (true) {
     console.log("\n[ FILAFÁCIL LOGÍSTICA ]");
@@ -116,7 +115,7 @@ async function init() {
       case "7":
         console.log("Encerrando...");
         rl.close();
-        await sequelize.close();
+        await controller.encerrar();
         return;
 
       default:
@@ -128,6 +127,5 @@ async function init() {
 init().catch((erro) => {
   console.error("Erro inesperado:", erro.message);
   rl.close();
-  sequelize.close();
-  process.exit(1);
+  controller.encerrar().finally(() => process.exit(1));
 });

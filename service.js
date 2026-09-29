@@ -2,6 +2,14 @@ const repo = require("./repository");
 
 const PRIORIDADES = ["baixa", "media", "alta"];
 
+function iniciar() {
+  return repo.iniciar();
+}
+
+function encerrar() {
+  return repo.encerrar();
+}
+
 function vazio(valor) {
   return valor === undefined || valor === null || String(valor).trim() === "";
 }
@@ -107,6 +115,8 @@ async function resumo() {
 }
 
 module.exports = {
+  iniciar,
+  encerrar,
   cadastrar,
   listar,
   filtrar,
